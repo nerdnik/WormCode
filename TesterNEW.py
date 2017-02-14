@@ -20,24 +20,24 @@ from TRYplotter19 import make_PD_movie, make_filtration_succession
 test = int(sys.argv[1])
 
 old_parameter_set = {
-	"num_divisions": 50,
+	"num_divisions": 50, 
 	"max_filtration_param": -20,
 	"min_filtration_param": 0,
-	"start": 0,
-	"worm_length": 10000,
-	"ds_rate": 50,
+	"start": 0, # where to start reading in the witness file
+	"worm_length": 10000, # how many witnesses to read
+	"ds_rate": 50,  # if using EST, what down sample rate to use
 	"landmark_selector": "maxmin",
 	"use_ne_for_maxmin": False,
-	"d_speed_amplify": 1,
-	"d_orientation_amplify": 1,
-	"d_stretch": 1,
-	"d_ray_distance_amplify": 1,
-	"d_use_hamiltonian": 0,
-	"d_cov" : 0,
-	"simplex_cutoff": 0,
-	"weak": False,
-	"absolute": False,
-	"use_cliques": False,
+	"d_speed_amplify": 1, # 
+	"d_orientation_amplify": 1, #
+	"d_stretch": 1, #
+	"d_ray_distance_amplify": 1, #
+	"d_use_hamiltonian": 0, #
+	"d_cov" : 0, #
+	"simplex_cutoff": 0, #
+	"weak": False, #
+	"absolute": False, #
+	"use_cliques": False, #
 	"use_twr": False,
 	"m2_d": 0,  #Set to anything but 0 to run, set 'time_order_landmarks' = TRUE (don't think i need last part anymore - CHECK)
 	"straight_VB": 0, #
@@ -51,8 +51,8 @@ old_parameter_set = {
 	"sort_output": False
 }
 
-set_path_to_Perseus("/Users/nicolesanderson/Desktop/Sams\ Worm\ Code")
-set_path_to_PHAT("C:\Users\Jamie\Desktop\Work\LizSummer2016\Software\phat-master\src\phat.exe")
+set_path_to_Perseus("")
+set_path_to_PHAT("")
 
 if test == 3 or test == 4 or test == 18 or test == 19 or test == 20 or test == 21:
 	number_of_steps = 50.0

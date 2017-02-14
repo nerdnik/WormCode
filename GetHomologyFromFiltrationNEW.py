@@ -8,14 +8,17 @@ class Paths:
 def compute_homology(input_file_name, output_file_name, program):
 	#chdir(path)
 	#print("Calculating persistent homology using %s..." % program)
+	print("INPUT FILE ",input_file_name)
+
+
+	print("OUTPUT FILE ",output_file_name)
 	if program == "Perseus":
 		if Paths.path_to_Perseus is None:
 			raise Exception("Must first call 'set_path_to_Perseus(path)'")
 		if output_file_name.endswith(".txt"):
 			output_file_name = os.path.splitext(output_file_name)[0]#output_file_name.substring(0, len(output_file_name) - 4)
 		output_file_name_TRY = '/Users/nicolesanderson/Desktop/Sams\ Worm\ Code/' + output_file_name
-		print 'The output file is named %s' % output_file_name_TRY
-		system("./perseusMac nmfsimtop %s %s" % (input_file_name, output_file_name_TRY))
+		system("./perseusMac nmfsimtop %s %s" % (input_file_name, output_file_name))
 	elif program == "PHAT":
 		if Paths.path_to_PHAT is None:
 			raise Exception("Must first call 'set_path_to_PHAT(path)'")

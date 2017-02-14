@@ -1,0 +1,2 @@
+#landmark: d(l,w1), d(l,w2) ... d(l,w_n) where l refers to the landmark's occurence in the witness file, order of the list refers to order it was found
+0: 

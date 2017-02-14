@@ -34,11 +34,11 @@ End from CSCI5576 HW7
 =============================================================*/
 typedef enum { false, true } bool; // Provide C++ style 'bool' type in C
 float           *witnesses;
-double           *distances;
+float           *distances;
 float           *times;
-double           *velocities;
-double           *norm_velocity;
-double           *speeds;
+float           *velocities;
+float           *norm_velocity;
+float           *speeds;
 float            avg_time;
 float            dev;
 float            err;
@@ -84,7 +84,7 @@ bool             use_euclidean = false;
 bool             done = false;
 bool 			 quiet = true;
 
-
+void dprint(char *c);
 void print_matrix(float *A);
 float std_dev(float d[],int s);
 float calc_error(float d,int n);
@@ -155,8 +155,10 @@ poptContext POPT_Context;  /* context for parsing command-line options */
             start = 0;
             stop = atoi(parse);
         }
-				printf("Start: %d stop: %d\n",start,stop);
+				
 				num_wits = stop-start;
+				printf("Number of witnesses: %d\n",num_wits);
+				fflush(stdout);
 				break;
       case 5:
       	use_est=true;
@@ -191,20 +193,24 @@ poptContext POPT_Context;  /* context for parsing command-line options */
   /***************** End command line parsing *************************/
 
 
-	//assert(num_landmarks<num_wits);
+
 	witnesses     = (float*) calloc(num_wits*wit_pts,sizeof(float));// x,y points for a witness
-	distances     = (double*) calloc((float)num_wits*(float)num_wits,sizeof(double)); //distance between all witnesses
+	distances     = (float*) calloc((float)num_wits*(float)num_wits,sizeof(float)); //distance between all witnesses
 	landmarks     = (int*)   calloc(num_landmarks,sizeof(int));//landmark set
 	times         = (float*) calloc(max_avg,sizeof(float));//used for timing results
-	velocities    = (double*) calloc(num_wits*wit_pts,sizeof(float));//velocities of witnesses
-	norm_velocity = (double*) calloc(num_wits*wit_pts,sizeof(float));//normalized velocities of witnesses
-	speeds        = (double*) calloc(num_wits,sizeof(float)); //speeds of witnesses
+	velocities    = (float*) calloc(num_wits*wit_pts,sizeof(float));//velocities of witnesses
+	norm_velocity = (float*) calloc(num_wits*wit_pts,sizeof(float));//normalized velocities of witnesses
+	speeds        = (float*) calloc(num_wits,sizeof(float)); //speeds of witnesses
 	landmark_set  = (char*)  calloc(num_wits,sizeof(char)); //set of chosen landmarks
 	float fx,fy;
 	i = 0;
 	j = 0;
 	/**************** Putting data into data structures ****************/
 	fp=fopen(file,"r");
+	if (fp == NULL) {
+    	perror("Failed: ");
+    	return 1;
+	}
 	printf("Reading in witnesses...");
 
 	fflush(stdout);
@@ -227,6 +233,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 	if(!quiet) //this is a debugging statement
 		printf(" %d/%d witnesses read...",l,num_wits);
 	fclose(fp);
+	fp=NULL;
 
 	printf("done\n");
 	fflush(stdout);
@@ -234,6 +241,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 	float vx,vy;
 	printf("Calculating vectors...");
 	fflush(stdout);
+	i=0;
 	while(i<num_wits-1){
 		vx = (witnesses[i+wit_pts]-witnesses[i]);
 		vy = (witnesses[i+1+wit_pts]-witnesses[i+1]);
@@ -272,9 +280,6 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 	fflush(stdout);
 
 /*******************************************************************/
-
-
-
 
 
 /***************** Calculating distance matrix ********************/
@@ -340,6 +345,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 					}
 				}	
 			}
+
 		}
 
 	}
@@ -353,7 +359,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 				#pragma omp for nowait schedule (runtime)
 				for(i=0;i<num_wits;i++){
 					for(j=0;j<num_wits;j++){
-						printf("Trying this: %f \n",norm_velocity[i*wit_pts]);
+						
 						x1 = witnesses[i*wit_pts] - use_hamiltonian*norm_velocity[i*wit_pts];
 						yone = witnesses[i*wit_pts+1] - use_hamiltonian*norm_velocity[i*wit_pts+1];
 
@@ -364,9 +370,6 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 							distances[i*num_wits+j] = (x2-x1)*(x2-x1)+(y2-yone)*(y2-yone);
 						}
 						else{
-// 							printf("Part one: %f\n",(x2-x1)*(x2-x1));
-// 							printf("Part two is %f\n",(y2-yone)*(y2-yone));
-// 							printf("The value is %f\n",((x2-x1)*(x2-x1)+(y2-yone)*(y2-yone)));
 							distances[i*num_wits+j] = sqrt((x2-x1)*(x2-x1)+(y2-yone)*(y2-yone));
 						}
 					}
@@ -499,13 +502,10 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 
 	printf("done\n");
 	fflush(stdout);
-	for(i=0;i<num_wits;i++){
-		for(j=0;j<num_wits;j++){
-			printf("%f ",distances[i*num_wits+j]);
-		}
-		printf("\n");
+
 	
-	}
+
+
 /********************* Determing landmark set *********************/
 	if(!use_est){
 		landmark_set[0]='l';
@@ -634,14 +634,15 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 
 	else{
 
-		printf("Determining landmark set using evenly spaced in time %d...",est);
+		printf("Determining landmark set using evenly spaced in time with downsample of %d...",est);
 		
 		fflush(stdout);
-	
+
 		k=0;
 		for(i=0;i<num_wits;i++){
 			if(i%est==0 && k<num_landmarks){
 				landmarks[k] = i; 
+				landmark_set[i] = 'l';
 				k++;
 			}
 		}
@@ -649,21 +650,38 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 	}
 /******************************************************************/
 
+
 /************* Writing landmarks distances to file ****************/
 	printf("Writing landmarks to file...");
-	fp=fopen(wfile,"w");
-	fprintf(fp,"#landmark: d(l,w1), d(l,w2) ... d(l,w_n)\n");
+	fflush(stdout);
+	fp=fopen("landmark_outputs.txt","w");
+	if (fp == NULL) {
+    	printf("\n\n\t\t ERROR: Failed to open output file %s!\n",wfile);
+    	fflush(stdout);
+    	return 1;
+	}
+	fprintf(fp,"#landmark: d(l,w1), d(l,w2) ... d(l,w_n) where l refers to the landmark's occurence in the witness file, order of the list refers to order it was found\n");
+	
 	for(i=0;i<num_landmarks;i++){
 		fprintf(fp,"%d: ",landmarks[i]);
+    	
 		for(j=0;j<num_wits;j++){
 			if(j<num_wits-1)
-				fprintf(fp,"%lf, ",distances[landmarks[i]*num_wits+j]);
+			{
+				
+				fprintf(fp,"%f, ",distances[landmarks[i]*num_wits+j]);
+			}
 			else
-				fprintf(fp,"%lf\n",distances[landmarks[i]*num_wits+j]);
+			{
+				fprintf(fp,"%f\n",distances[landmarks[i]*num_wits+j]);
+			}
 		}
 	}
+	
 	fclose(fp);
 	printf("done\n");
+	fflush(stdout);
+	
 /******************************************************************/
 
 	printf("Freeing memory...");
@@ -678,8 +696,10 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 	free(landmark_set);
 	free(distances);
 	free(landmarks);
+
 	printf("done\n");
 	fflush(stdout);
+
 	return 0;
 
 }
@@ -691,6 +711,14 @@ void print_matrix(float *A){
 		printf("\n");
 	}
 }
+
+void dprint(char *c){
+	printf("DUBUGGING STATEMENT\t[");
+	printf(c);
+	printf("]\n");
+	fflush(stdout);
+}
+
 
 float std_dev(float d[],int n){
     float sum=0.0;
