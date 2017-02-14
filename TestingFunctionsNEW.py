@@ -19,7 +19,7 @@ def make_worm_movies(input_file_name, number_of_worms, parameter_set = None, for
 			return parameter_set.get(key)
 		else:
 			return standard_parameter_set.get(key)
-	input_file = open(input_file_name, "r")
+	input_file = open("test_cases/"+input_file_name, "r")
 	number_of_lines = len(input_file.read().split("\n"))
 	input_file.close()
 	worm_length = get_param("worm_length")
@@ -77,7 +77,7 @@ def points_to_persistence_diagram(input_file_base_name, parameter_set = None, cl
 	else:
 		max_filtration_param = filtration[1][-1]
 	homology_file_name = input_file_base_name + "_" + program + "_homology" 
-	print 'Hello There!'
+	
 	if program != "Perseus":
 		homology_file_name = homology_file_name + ".txt"
 	compute_homology(complex_file_name, homology_file_name, program)

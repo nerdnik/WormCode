@@ -18,5 +18,5 @@ def get_intervals(input_file_name, output_file_name, format = False, max_filtrat
 		input_file_name = temp_file_name
 		input_file.close()
 		temp_file.close()
-	chdir("/Users/nicolesanderson/Desktop/Sams\ Worm\ Code")
+	
 	system("./perseusMac brips %s %s" % (input_file_name, output_file_name))

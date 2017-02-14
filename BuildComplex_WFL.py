@@ -19,7 +19,7 @@ standard_parameter_set = {
 	"num_divisions": 50,
 	"max_filtration_param": -20,
 	"min_filtration_param": 0,
-	"start": 0,
+	"start": 0, 
 	"worm_length": 0,
 	"ds_rate": 50,
 	"landmark_selector": "maxmin",
@@ -47,7 +47,7 @@ standard_parameter_set = {
 }
 
 def build_filtration(input_file_name, parameter_set = None, **overrides):
-	#print(parameter_set["cutoff"])
+	
 	num_threads = 2
 	d = [] #this is where distance to all landmarks for each witness goes.  It is a list of'
 
@@ -60,7 +60,7 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			# assert standard_parameter_set.has_key(key) # Remove this line once confident I didn't miss any when I rewrote this file.
 			return standard_parameter_set.pre_landmarks(key)
 	
-	input_file = open(input_file_name+'.txt')
+	input_file = open("test_cases/"+input_file_name+'.txt')
 	speed_amplify = float(get_param("d_speed_amplify"))
 	orientation_amplify = float(get_param("d_orientation_amplify"))
 	stretch = float(get_param("d_stretch"))
@@ -89,8 +89,15 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	num_divisions = get_param("num_divisions")
 	simplex_cutoff = get_param("simplex_cutoff")
 
+
+
+
+
+
+	
+	'''=============== This code written by Sam ======================'''
+
 	## Read data into witness and landmark lists.
-	'''===============This code written by Samantha Molnar for CSCI5576 Final Project======================'''
 	witnesses = []
 	landmarks = []
 	landmark_indices = []
@@ -122,15 +129,35 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	stop = start + worm_length
 	
 	num_threads = 2
+	# for more information about these parameters type ./find_landmarks --help in the terminal
+	# the distance calculations our calculated and outputted to a file called find_landmarks.txt
 	if ls=="EST":
 		if always_euclidean:
+			print ([
+			"./find_landmarks",
+			"-q",
+			"-n {}".format(num_threads),
+			"-l {}".format(number_of_vertices),
+			"-w {}-{}".format(start,stop),
+			"-i{}".format('test_cases/'+input_file_name+'.txt'),
+			"-olandmark_outputs.txt",
+			"-m {}".format(int(m2_d)),
+			"-a {}".format(speed_amplify),
+			"-y {}".format(orientation_amplify),
+			"-h {}".format(use_hamiltonian),
+			"-r {}".format(ray_distance_amplify),
+			"-v {}".format(straight_VB),
+			"-s {}".format(stretch),
+			"-e {}".format(downsample_rate),
+			"-c"
+			])
 			subprocess.call([
 			"./find_landmarks",
 			"-q",
 			"-n {}".format(num_threads),
 			"-l {}".format(number_of_vertices),
 			"-w {}-{}".format(start,stop),
-			"-i{}".format(input_file_name+'.txt'),
+			"-i{}".format('test_cases/'+input_file_name+'.txt'),
 			"-olandmark_outputs.txt",
 			"-m {}".format(int(m2_d)),
 			"-a {}".format(speed_amplify),
@@ -148,7 +175,7 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-n {}".format(num_threads),
 			"-l {}".format(number_of_vertices),
 			"-w {}-{}".format(start,stop),
-			"-i{}".format(input_file_name+'.txt'),
+			"-i{}".format('test_cases/'+input_file_name+'.txt'),
 			"-olandmark_outputs.txt",
 			"-m {}".format(int(m2_d)),
 			"-a {}".format(speed_amplify),
@@ -166,7 +193,7 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-n {}".format(num_threads),
 			"-l {}".format(number_of_vertices),
 			"-w {}-{}".format(start,stop),
-			"-i{}".format(input_file_name+'.txt'),
+			"-i{}".format('test_cases/'+input_file_name+'.txt'),
 			"-olandmark_outputs.txt",
 			"-m {}".format(int(m2_d)),
 			"-a {}".format(speed_amplify),
@@ -182,7 +209,7 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"./find_landmarks","-q","-n {}".format(num_threads),
 			"-l {}".format(number_of_vertices),
 			"-w {}-{}".format(start,stop),
-			"-i{}".format(input_file_name+'.txt'),
+			"-i{}".format('test_cases/'+input_file_name+'.txt'),
 			"-olandmark_outputs.txt",
 			"-m {}".format(int(m2_d)),
 			"-a {}".format(speed_amplify),
@@ -199,15 +226,19 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	l = landmarks_file.readlines()	
 	sys.stdout.write("Reading in distance calculations...")
 	sys.stdout.flush()
+	counter = 0
 	for line in l:
 		f = line.strip('\n')
 		if "#" not in f:
 			landmark = int(f.split(":")[0])
 			distances = f.split(":")[1].split(",")
+			
 			for i in range(0,len(witnesses)):
-				d[i].append(LandmarkDistance(landmark,float(distances[i])))
+
+				d[i].append(LandmarkDistance(counter,float(distances[i])))
 			landmarks.append(witnesses[landmark])
 			landmark_indices.append(landmark)
+		counter+=1
 
 	assert(len(d)>0)
 	sys.stdout.write("done\n")
@@ -222,7 +253,15 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	sys.stdout.flush()
 	assert len(landmarks) == number_of_vertices
 
-	'''===============End code written by Samantha Molnar for CSCI5576 Final Project======================'''
+	'''=============== End code written by Sam ======================'''
+
+
+
+
+
+
+
+
 	print("Building filtration...")
 	## Build filtration
 	weak = get_param("weak")
@@ -433,6 +472,7 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	
 	## Write to output file
 	output_file_name = get_param("out")
+	
 	if not output_file_name is None:
 		output_file = open(output_file_name, "w")
 		output_file.truncate()
@@ -441,7 +481,7 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			print("Writing filtration for input into %s..." % program)
 			dimension_cutoff = number_of_vertices
 		else:
-			print("Writing filtration for input into %s, ignoring simplices above dimension %i..." % (program, dimension_cutoff))
+			print("Writing filtration to file %s for input into %s, ignoring simplices above dimension %i..." % (output_file_name,program, dimension_cutoff))
 		num_lines = 0
 		if program == "Perseus":
 			sets_printed_so_far = Set()
