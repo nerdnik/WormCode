@@ -1085,4 +1085,34 @@ elif test == 667:
 elif test == 668:
 	make_worm_movies('L63_x_m2_tau20.txt', 2, old_parameter_set, worm_length=10,ds_rate = 2,max_filtration_parameter=1,landmark_selector="EST",max_filtration_param=-3,d_use_hamiltonian=-3)
 	
+######### Nikki  Started Running Tests #############
+
+
+########test euclidean##########
+elif test == 669:
+	make_worm_movies('L63_x_m2_tau20.txt', 2, old_parameter_set)
+elif test == 670:
+	f = points_to_persistence_diagram('L63_x_m2_tau20.txt', old_parameter_set)
+	make_movie(f, 'L63_x_m2_tau20.txt', include_witnesses = True)
+	
+######### Use hamiltonian ###################
+elif test == 671:
+	f = points_to_persistence_diagram('L63_x_m2_tau20.txt', old_parameter_set, landmark_selector = 'maxmin', d_use_hamiltonian=-5)
+	make_movie(f, 'L63_x_m2_tau20.txt', include_witnesses = True)
+elif test == 672:
+	make_worm_movies('L63_x_m2_tau20.txt', 2, old_parameter_set,d_use_hamiltonian=-5)
+	
+######### m2_d ###################
+elif test == 673:
+	f = points_to_persistence_diagram('L63_x_m2_tau20.txt', old_parameter_set,m2_d=1)
+	make_movie(f, 'L63_x_m2_tau20.txt', include_witnesses = True)
+elif test == 674:
+	make_worm_movies('L63_x_m2_tau20.txt', 2, old_parameter_set,m2_d=1)
+######### orientation ###################
+elif test == 675:
+	f = points_to_persistence_diagram('L63_x_m2_tau20.txt', old_parameter_set,d_orientation_amplify=20)
+	make_movie(f, 'L63_x_m2_tau20.txt', include_witnesses = True)
+elif test == 676:
+	make_worm_movies('L63_x_m2_tau20.txt', 2, old_parameter_set,d_orientation_amplify=20)
+	
 	

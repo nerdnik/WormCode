@@ -69,7 +69,7 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	m2_d = float(get_param("m2_d"))
 	straight_VB = float(get_param("straight_VB"))
 	always_euclidean = speed_amplify == orientation_amplify == stretch == ray_distance_amplify == 1.0 and use_hamiltonian == 0.0
-	#if always_euclidean then should call C code otherwise call this code
+	
 	print 'Is m2_d on: %f' % m2_d
 	print 'Is straight_VB on : %f' % straight_VB
 
@@ -107,12 +107,12 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	counter = 0
 	for i in xrange(start):           #  Where to start reading data 
 		input_file.readline()
+		counter+=1
 	landmark_indices=[]
-
-	counter = 0
+	
+	
 	for line in input_file.read().split("\n"):
 		if line != "" and counter>=start:
-			counter += 1
 			string_witness = line.split(" ")
 			witness = []
 			d.append([])
@@ -120,37 +120,20 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 				if coordinate != "":
 					witness.append(float(coordinate))
 			witnesses.append(witness)
+			counter += 1
 			if counter == worm_length:
 				break
 	
 	number_of_datapoints = len(witnesses)
 	number_of_vertices = int(number_of_datapoints/downsample_rate)
 	num_coordinates = len(witnesses[0])
-	stop = start + worm_length
+	stop = start + counter
 	
 	num_threads = 2
 	# for more information about these parameters type ./find_landmarks --help in the terminal
-	# the distance calculations our calculated and outputted to a file called find_landmarks.txt
+	# the distance calculations are calculated and outputted to a file called find_landmarks.txt
 	if ls=="EST":
 		if always_euclidean:
-			print ([
-			"./find_landmarks",
-			"-q",
-			"-n {}".format(num_threads),
-			"-l {}".format(number_of_vertices),
-			"-w {}-{}".format(start,stop),
-			"-i{}".format('test_cases/'+input_file_name+'.txt'),
-			"-olandmark_outputs.txt",
-			"-m {}".format(int(m2_d)),
-			"-a {}".format(speed_amplify),
-			"-y {}".format(orientation_amplify),
-			"-h {}".format(use_hamiltonian),
-			"-r {}".format(ray_distance_amplify),
-			"-v {}".format(straight_VB),
-			"-s {}".format(stretch),
-			"-e {}".format(downsample_rate),
-			"-c"
-			])
 			subprocess.call([
 			"./find_landmarks",
 			"-q",
@@ -187,8 +170,24 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-e {}".format(downsample_rate)
 			])	
 	else:
-		if always_euclidean:
+		if always_euclidean and m2_d!=0:
 			subprocess.call([
+			"./find_landmarks",
+			"-n {}".format(num_threads),
+			"-l {}".format(number_of_vertices),
+			"-w {}-{}".format(start,stop),
+			"-i{}".format('test_cases/'+input_file_name+'.txt'),
+			"-olandmark_outputs.txt",
+			"-m {}".format(int(m2_d)),
+			"-a {}".format(speed_amplify),
+			"-y {}".format(orientation_amplify),
+			"-h {}".format(use_hamiltonian),
+			"-r {}".format(ray_distance_amplify),
+			"-v {}".format(straight_VB),
+			"-s {}".format(stretch)
+			])
+		elif always_euclidean:
+						subprocess.call([
 			"./find_landmarks",
 			"-n {}".format(num_threads),
 			"-l {}".format(number_of_vertices),
@@ -226,19 +225,17 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	l = landmarks_file.readlines()	
 	sys.stdout.write("Reading in distance calculations...")
 	sys.stdout.flush()
-	counter = 0
+	landmark_index = 0
 	for line in l:
 		f = line.strip('\n')
 		if "#" not in f:
 			landmark = int(f.split(":")[0])
-			distances = f.split(":")[1].split(",")
-			
-			for i in range(0,len(witnesses)):
-
-				d[i].append(LandmarkDistance(counter,float(distances[i])))
+			distances = [float(i) for i in f.split(":")[1].split(",")]
+			for witness_index in range(0,len(witnesses)):
+				d[witness_index].append(LandmarkDistance(landmark_index,distances[witness_index]))
 			landmarks.append(witnesses[landmark])
 			landmark_indices.append(landmark)
-		counter+=1
+			landmark_index+=1
 
 	assert(len(d)>0)
 	sys.stdout.write("done\n")

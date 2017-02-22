@@ -224,7 +224,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 		if(l>=start){ 
 			witnesses[i]=fx;
 			witnesses[i+1]=fy;
-			landmark_set[i] = 'n';
+			landmark_set[l] = 'n';
 			i+=2;
 		}
 		l++;
@@ -256,7 +256,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 	
 	//calculating speeds
 	for(i=0;i<num_wits-1;i++){
-		speeds[i]=sqrt(velocities[i]+velocities[i+1]);
+		speeds[i]=sqrt(velocities[i]*velocities[i]+velocities[i+1]*velocities[i+1]);
 		if(speeds[i]>max_speed)
 			max_speed = speeds[i];
 		if(speeds[i]<min_speed)
@@ -330,7 +330,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 			printf("\tDistance matrix of size %lld took %f (s) with an error of %f.\n",num_wits,sum/(float)t,err);
 		}
 	else{//not timing
-			printf("Running distance calculations 2...");
+			printf("Running distance calculations 2..."); //euclidean
 			fflush(stdout);
 			#pragma omp parallel num_threads(num_threads) shared(distances,witnesses,num_wits,wit_pts) private(i,j,x,y)
 			{
@@ -400,7 +400,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 	}
 
 	else if(m2_d!= 0.0){
-		printf("Running distance calculations 4...");
+		printf("Running distance calculations 4..."); //m2_d
 		fflush(stdout);
 		if(straight_VB){
 			#pragma omp parallel num_threads(num_threads) shared(witnesses,num_wits,distances) private(i,j,x,y)
@@ -413,11 +413,10 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 						y = witnesses[i*wit_pts+1]-witnesses[j*wit_pts+1];
 						y *= y;
 						 
-
 						x1 = witnesses[(i+m2_d)*wit_pts] - witnesses[(j+m2_d)*wit_pts];
-						x1 = x1*x1;
-						yone = witnesses[(i+m2_d+1)*wit_pts] - witnesses[(j+m2_d+1)*wit_pts];
-						yone = yone*yone;
+						x1 *= x1;
+						yone = witnesses[(i+m2_d)*wit_pts+1] - witnesses[(j+m2_d)*wit_pts+1];
+						yone *= yone;
 						
 						distances[i*num_wits+j] = x+y+x1+yone;
 					}
@@ -438,9 +437,9 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 						 
 
 						x1 = witnesses[(i+m2_d)*wit_pts] - witnesses[(j+m2_d)*wit_pts];
-						x1 = x1*x1;
-						yone = witnesses[(i+m2_d+1)*wit_pts] - witnesses[(j+m2_d+1)*wit_pts];
-						yone = yone*yone;
+						x1 *= x1;
+						yone = witnesses[(i+m2_d)*wit_pts+1] - witnesses[(j+m2_d)*wit_pts+1];
+						yone *= yone;
 						
 						distances[i*num_wits+j] = sqrt(x+y+x1+yone);
 					}
@@ -453,7 +452,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 		float ds;
 		float da;
 		float dor,dot,dst,speed_term;
-		printf("Running distance calculations 5...");
+		printf("Running distance calculations 5..."); //orientation
 		fflush(stdout);
 		#pragma omp parallel num_threads(num_threads) shared(num_wits,witnesses,stretch,norm_velocity,orientation_amplify,speeds,min_speed,max_speed,speed_amplify,distances,straight_VB) private(i,j,x1,yone,d)
 		{
@@ -587,15 +586,14 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 			{
 				for(l=1;l<num_landmarks;l++){
 					max = 0;
-					max_index = 0;
+					max_index = -1;
 					#pragma omp for nowait schedule(runtime)
 					for(i=0;i<num_wits;i++){
-						min = 1000000;
-						min_index=0;
+						min = 1000000000;
+						min_index=-1;
 						if(landmark_set[i]=='n'){
 							for(j=0;j<l;j++){ //find minimum distance between witness and one of the landmarks
 								landmark = landmarks[j];
-								
 								dist = distances[landmark*num_wits+i];
 								if(dist<min){
 									min = dist;
@@ -616,7 +614,7 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 						max = 0;
 						max_index = 0;
 						for(i=0;i<num_threads;i++){
-							if(candidate_dist[i]>max){
+							if(candidate_dist[i]>max && landmark_set[candidate_set[i]]!='l'){
 								max = candidate_dist[i];
 								max_index = candidate_set[i];
 							}
