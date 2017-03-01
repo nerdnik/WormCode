@@ -13,6 +13,7 @@ from heapq import heappush, heappop
 import numpy as np
 import math
 import subprocess
+import multiprocessing
 
 
 standard_parameter_set = {
@@ -230,8 +231,15 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 		f = line.strip('\n')
 		if "#" not in f:
 			landmark = int(f.split(":")[0])
+			
 			distances = [float(i) for i in f.split(":")[1].split(",")]
-			for witness_index in range(0,len(witnesses)):
+			for witness_index in range(0,len(distances)):
+				print "-------------"
+				print landmark
+				print witness_index
+				print len(d[witness_index])
+				print distances[witness_index]
+				print "-------------"
 				d[witness_index].append(LandmarkDistance(landmark_index,distances[witness_index]))
 			landmarks.append(witnesses[landmark])
 			landmark_indices.append(landmark)
@@ -243,9 +251,14 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 
 	sys.stdout.write("Sorting distances...")
 	sys.stdout.flush()
+	#p=multiprocessing.Pool(processes=2)
+
+
+	inputs=[]
 	for w in range(0,len(witnesses)):
+# 		inputs.append(i)
 		d[w].sort()	
-	
+	#p.map(sort,range(len(witnesses)))
 	sys.stdout.write("done\n")
 	sys.stdout.flush()
 	assert len(landmarks) == number_of_vertices

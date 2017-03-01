@@ -39,18 +39,20 @@ float           *times;
 float           *velocities;
 float           *norm_velocity;
 float           *speeds;
+//timing
 float            avg_time;
 float            dev;
 float            err;
 float            sum;
 
+//used to store calculated values
+float            x,y,x1,yone,x2,y2,d,r,s,m,xi,xj,yi,yj; 
+float            min_speed=1000000;
+float            max_speed=-1000000;
 
-double            x,y,x1,yone,x2,y2,d,r,s,m; //used to store calculated values
-double            min_speed=1000000;
-double            max_speed=-1000000;
 
+//distance calculation options
 float            use_hamiltonian = 0.0;
-int              m2_d = 0.0;
 float            speed_amplify = 1.0;
 float            orientation_amplify = 1.0;
 float            ray_distance_amplify = 1.0;
@@ -65,6 +67,8 @@ FILE            *fp;
 
 int64_t          num_wits=1;
 int64_t          i,j,k;
+
+int              m2_d = 0.0;
 int              num_landmarks=1;
 int              t,l;
 int              est;
@@ -88,6 +92,7 @@ void dprint(char *c);
 void print_matrix(float *A);
 float std_dev(float d[],int s);
 float calc_error(float d,int n);
+float e_dist(float,float,float,float);
 int main(int argc, char* argv[]){
         char *parse;
 	struct timeval begin;
@@ -353,46 +358,31 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 	else if(use_hamiltonian!=0.0){ //hamiltonian is something other than 0
 		printf("Running distance calculations 3...");
 		fflush(stdout);
+		float dhamil=0.,deuc=0.;
 		if(use_hamiltonian<0){
-			#pragma omp parallel num_threads(num_threads) shared(num_wits,witnesses,use_hamiltonian,norm_velocity,straight_VB,distances,wit_pts) private(i,j,x1,yone,x2,y2)
+		
+			#pragma omp parallel num_threads(num_threads) shared(num_wits,witnesses,use_hamiltonian,norm_velocity,straight_VB,distances,wit_pts) private(i,j,deuc,dhamil)
 			{
 				#pragma omp for nowait schedule (runtime)
 				for(i=0;i<num_wits;i++){
 					for(j=0;j<num_wits;j++){
-						
-						x1 = witnesses[i*wit_pts] - use_hamiltonian*norm_velocity[i*wit_pts];
-						yone = witnesses[i*wit_pts+1] - use_hamiltonian*norm_velocity[i*wit_pts+1];
-
-						x2 = witnesses[j*wit_pts] - use_hamiltonian*norm_velocity[j*wit_pts];
-						y2 = witnesses[j*wit_pts+1] - use_hamiltonian*norm_velocity[j*wit_pts+1];
-						if(straight_VB){
-
-							distances[i*num_wits+j] = (x2-x1)*(x2-x1)+(y2-yone)*(y2-yone);
-						}
-						else{
-							distances[i*num_wits+j] = sqrt((x2-x1)*(x2-x1)+(y2-yone)*(y2-yone));
-						}
+						deuc = e_dist(witnesses[i*wit_pts], witnesses[i*wit_pts+1], witnesses[j*wit_pts], witnesses[j*wit_pts+1]);
+						dhamil = -use_hamiltonian*e_dist(norm_velocity[i*wit_pts],norm_velocity[i*wit_pts+1],norm_velocity[j*wit_pts],norm_velocity[j*wit_pts+1]);
+						distances[i*num_wits+j] = deuc+dhamil;
 					}
 				}
 			}
 		}
 
 		else{
-			#pragma omp parallel num_threads(num_threads) shared(num_wits,witnesses,use_hamiltonian,norm_velocity,straight_VB,distances,wit_pts) private(i,j,x1,yone,x2,y2)
+			#pragma omp parallel num_threads(num_threads) shared(num_wits,witnesses,use_hamiltonian,norm_velocity,straight_VB,distances,wit_pts) private(i,j,deuc,dhamil)
 			{
 				#pragma omp for nowait schedule (runtime)
 				for(i=0;i<num_wits;i++){
 					for(j=0;j<num_wits;j++){
-						x1 = witnesses[i*wit_pts] + use_hamiltonian*velocities[i*wit_pts];
-						yone = witnesses[i*wit_pts+1] + use_hamiltonian*velocities[i*wit_pts+1];
-						x2 = witnesses[j*wit_pts] + use_hamiltonian*velocities[j*wit_pts];
-						y2 = witnesses[j*wit_pts+1] + use_hamiltonian*velocities[j*wit_pts+1];
-						if(straight_VB){
-							distances[i*num_wits+j] = (x2-x1)*(x2-x1)+(y2-yone)*(y2-yone);
-						}
-						else{
-							distances[i*num_wits+j] = sqrt((x2-x1)*(x2-x1)+(y2-yone)*(y2-yone));
-						}
+						deuc = e_dist(witnesses[i*wit_pts], witnesses[i*wit_pts+1], witnesses[j*wit_pts], witnesses[j*wit_pts+1]);
+						dhamil = use_hamiltonian*e_dist(norm_velocity[i*wit_pts],norm_velocity[i*wit_pts+1],norm_velocity[j*wit_pts],norm_velocity[j*wit_pts+1]);
+						distances[i*num_wits+j] = deuc+dhamil;
 					}
 				}
 			}
@@ -512,120 +502,50 @@ poptContext POPT_Context;  /* context for parsing command-line options */
 		printf("Determining landmark set using MaxMin...",num_threads);
 		fflush(stdout);
 		float   max=-1,min=888888888,dist;
-		int     max_index,landmark,min_index;
-		int     candidate_set[num_threads];
-		float   candidate_dist[num_threads];
+		int     max_index,landmark,min_index,l_count=1;
+		int     candidate_set[num_wits];
+		float   candidate_dist[num_wits];
 
-		if(timing){
-			t = 0;
-			done = false;
-			while(!done && t<max_avg){
-			#pragma omp parallel num_threads(num_threads) shared(distances,witnesses,num_wits,num_landmarks,candidate_set,candidate_dist,landmark_set) private(i,j,l,min,min_index,max_index,max,dist,landmark) 
+		while(l_count<num_landmarks){
+			#pragma omp parallel num_threads(num_threads) shared(l_count,witnesses,num_wits,num_landmarks,candidate_set,candidate_dist,landmark_set) private(i,l,min,min_index,max_index,max,dist,landmark) 
 			{
-				gettimeofday(&begin,NULL);
-				for(l=1;l<num_landmarks;l++){
-					max = 0;
-					max_index = 0;
-					#pragma omp for nowait schedule (runtime)
+				#pragma omp for nowait schedule(runtime)
 					for(i=0;i<num_wits;i++){
-						min = 1000000;
-						min_index=0;
+						min = 888888888;
+						min_index = -1;
 						if(landmark_set[i]=='n'){
-							for(j=0;j<l;j++){ //find minimum distance between witness and one of the landmarks
-								landmark = landmarks[j];
-								
-								dist = distances[landmark*num_wits+i];
+							
+							for(l=0;l<l_count;l++){
+								landmark = landmarks[l];			
+								dist = e_dist(witnesses[landmark*wit_pts],witnesses[landmark*wit_pts+1],witnesses[i*wit_pts],witnesses[i*wit_pts+1]);
 								if(dist<min){
 									min = dist;
-									min_index=i;
+									min_index = i;
 								}
 							}
-							if(min>max){//if that min distance is larger than previously, replace
-								max_index=i;
-								max=min;
-							}
 						}
+						candidate_set[i] = min_index;
+						candidate_dist[i] = min;
 					}
-					candidate_set[omp_get_thread_num()] = max_index;
-					candidate_dist[omp_get_thread_num()] = max;
-
-					#pragma omp master
-					{	
-						max = 0;
-						max_index = 0;
-						for(i=0;i<num_threads;i++){
-							if(candidate_dist[i]>max && landmark_set[candidate_set[i]]!='l'){
-								max = candidate_dist[i];
-								max_index = candidate_set[i];
-							}
-						}
-						landmarks[l]=max_index;
-						landmark_set[max_index] = 'l';
-					}
-					#pragma omp barrier
-		  		}
-		  	
-		  		gettimeofday(&end,NULL);
-		  	}
-		  		times[t] = calctime(begin,end);
-		  		t++;
-	  	  		dev = std_dev(times,t);
-	  	  		err = calc_error(dev,t);
-		  		if(err<=.05 && t>=2)
-	     	    			done = true;
-			}
-			sum = 0;
-			for(i = 0;i<t;i++){
-		  		sum+=times[i];
-			}	
-			printf("done\n");
-			printf("Landmark set of size %d took %f (s) with an error of %f.\n",num_landmarks,sum/(float)t,err);
-		}
-		else{
-			#pragma omp parallel num_threads(num_threads) shared(distances,witnesses,num_wits,num_landmarks,candidate_set,candidate_dist,landmark_set) private(i,j,l,min,min_index,max_index,max,dist,landmark) 
-			{
-				for(l=1;l<num_landmarks;l++){
-					max = 0;
+				#pragma omp master
+				{	
+					max = 0.;
 					max_index = -1;
-					#pragma omp for nowait schedule(runtime)
 					for(i=0;i<num_wits;i++){
-						min = 1000000000;
-						min_index=-1;
-						if(landmark_set[i]=='n'){
-							for(j=0;j<l;j++){ //find minimum distance between witness and one of the landmarks
-								landmark = landmarks[j];
-								dist = distances[landmark*num_wits+i];
-								if(dist<min){
-									min = dist;
-									min_index=i;
-								}
-							}
-							if(min>max){//if that min distance is larger than previously, replace
-								max_index=i;
-								max=min;
-							}
+						if(candidate_dist[i]>max && landmark_set[i]!='l'){
+							max = candidate_dist[i];
+							max_index = i;
 						}
 					}
-					candidate_set[omp_get_thread_num()] = max_index;
-					candidate_dist[omp_get_thread_num()] = max;
-
-					#pragma omp master
-					{	
-						max = 0;
-						max_index = 0;
-						for(i=0;i<num_threads;i++){
-							if(candidate_dist[i]>max && landmark_set[candidate_set[i]]!='l'){
-								max = candidate_dist[i];
-								max_index = candidate_set[i];
-							}
-						}
-						landmarks[l]=max_index;
-						landmark_set[max_index] = 'l';
-					}
-					#pragma omp barrier
-		  		}
+					landmarks[l]=max_index;
+					landmark_set[max_index] = 'l';
+					l_count+=1;
+				}
+				#pragma omp barrier
+				
 		  	}
 		}
+		
 		printf("done\n");
 		fflush(stdout);
 	}
@@ -716,7 +636,9 @@ void dprint(char *c){
 	printf("]\n");
 	fflush(stdout);
 }
-
+float e_dist(float ix, float iy, float jx, float jy){
+	return sqrt((jx-ix)*(jx-ix)+(jy-iy)*(jy-iy));
+}
 
 float std_dev(float d[],int n){
     float sum=0.0;

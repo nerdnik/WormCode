@@ -1090,7 +1090,7 @@ elif test == 668:
 
 ########test euclidean##########
 elif test == 669:
-	make_worm_movies('L63_x_m2_tau20.txt', 2, old_parameter_set)
+	make_worm_movies('L63_x_m2_tau20.txt', 2, old_parameter_set,ds_rate=50,worm_length=3000)
 elif test == 670:
 	f = points_to_persistence_diagram('L63_x_m2_tau20.txt', old_parameter_set)
 	make_movie(f, 'L63_x_m2_tau20.txt', include_witnesses = True)
@@ -1114,5 +1114,4 @@ elif test == 675:
 	make_movie(f, 'L63_x_m2_tau20.txt', include_witnesses = True)
 elif test == 676:
 	make_worm_movies('L63_x_m2_tau20.txt', 2, old_parameter_set,d_orientation_amplify=20)
-	
 	

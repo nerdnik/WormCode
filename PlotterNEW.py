@@ -190,8 +190,6 @@ def make_movie(filtration_tuple, movie_title, framerate = 2.0, view = None, incl
 	point_locations = filtration_tuple[1][0]
 	step = 1
 	progress_through_filtration = 0
-	print "SORTED FILTRATION!"
-	print sorted_filtration
 	while sorted_filtration[progress_through_filtration].birth_time < 1:
 		print progress_through_filtration
 		progress_through_filtration += 1
