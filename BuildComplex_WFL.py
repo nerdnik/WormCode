@@ -69,7 +69,8 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	use_hamiltonian = float(get_param("d_use_hamiltonian"))
 	m2_d = float(get_param("m2_d"))
 	straight_VB = float(get_param("straight_VB"))
-	always_euclidean = speed_amplify == orientation_amplify == stretch == ray_distance_amplify == 1.0 and use_hamiltonian == 0.0
+	d_cov = get_param("d_cov")
+	always_euclidean = speed_amplify == orientation_amplify == stretch == ray_distance_amplify == 1.0 and use_hamiltonian == d_cov==0.
 	
 	print 'Is m2_d on: %f' % m2_d
 	print 'Is straight_VB on : %f' % straight_VB
@@ -133,15 +134,14 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 	num_threads = 2
 	# for more information about these parameters type ./find_landmarks --help in the terminal
 	# the distance calculations are calculated and outputted to a file called find_landmarks.txt
-	if ls=="EST":
+		if ls=="EST":
 		if always_euclidean:
 			subprocess.call([
 			"./find_landmarks",
-			"-q",
 			"-n {}".format(num_threads),
 			"-l {}".format(number_of_vertices),
 			"-w {}-{}".format(start,stop),
-			"-i{}".format('test_cases/'+input_file_name+'.txt'),
+			"-i{}".format(input_file_name),
 			"-olandmark_outputs.txt",
 			"-m {}".format(int(m2_d)),
 			"-a {}".format(speed_amplify),
@@ -151,6 +151,7 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-v {}".format(straight_VB),
 			"-s {}".format(stretch),
 			"-e {}".format(downsample_rate),
+			"-x {}".format(d_cov),
 			"-c"
 			])	
 		else:
@@ -159,7 +160,7 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-n {}".format(num_threads),
 			"-l {}".format(number_of_vertices),
 			"-w {}-{}".format(start,stop),
-			"-i{}".format('test_cases/'+input_file_name+'.txt'),
+			"-i{}".format(input_file_name),
 			"-olandmark_outputs.txt",
 			"-m {}".format(int(m2_d)),
 			"-a {}".format(speed_amplify),
@@ -168,16 +169,18 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-r {}".format(ray_distance_amplify),
 			"-v {}".format(straight_VB),
 			"-s {}".format(stretch),
+			"-x {}".format(d_cov),
 			"-e {}".format(downsample_rate)
 			])	
 	else:
 		if always_euclidean and m2_d!=0:
+			
 			subprocess.call([
 			"./find_landmarks",
 			"-n {}".format(num_threads),
 			"-l {}".format(number_of_vertices),
 			"-w {}-{}".format(start,stop),
-			"-i{}".format('test_cases/'+input_file_name+'.txt'),
+			"-i{}".format(input_file_name),
 			"-olandmark_outputs.txt",
 			"-m {}".format(int(m2_d)),
 			"-a {}".format(speed_amplify),
@@ -185,15 +188,16 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-h {}".format(use_hamiltonian),
 			"-r {}".format(ray_distance_amplify),
 			"-v {}".format(straight_VB),
+			"-x {}".format(d_cov),
 			"-s {}".format(stretch)
 			])
 		elif always_euclidean:
-						subprocess.call([
+			subprocess.call([
 			"./find_landmarks",
 			"-n {}".format(num_threads),
 			"-l {}".format(number_of_vertices),
 			"-w {}-{}".format(start,stop),
-			"-i{}".format('test_cases/'+input_file_name+'.txt'),
+			"-i{}".format(input_file_name),
 			"-olandmark_outputs.txt",
 			"-m {}".format(int(m2_d)),
 			"-a {}".format(speed_amplify),
@@ -201,15 +205,16 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-h {}".format(use_hamiltonian),
 			"-r {}".format(ray_distance_amplify),
 			"-v {}".format(straight_VB),
+			"-x {}".format(d_cov),
 			"-s {}".format(stretch),
 			"-c"
 			])
 		else:
-			subprocess.call([
-			"./find_landmarks","-q","-n {}".format(num_threads),
+			print ["./find_landmarks",
+			"-n {}".format(num_threads),
 			"-l {}".format(number_of_vertices),
 			"-w {}-{}".format(start,stop),
-			"-i{}".format('test_cases/'+input_file_name+'.txt'),
+			"-i{}".format(input_file_name),
 			"-olandmark_outputs.txt",
 			"-m {}".format(int(m2_d)),
 			"-a {}".format(speed_amplify),
@@ -217,6 +222,23 @@ def build_filtration(input_file_name, parameter_set = None, **overrides):
 			"-h {}".format(use_hamiltonian),
 			"-r {}".format(ray_distance_amplify),
 			"-v {}".format(straight_VB),
+			"-x {}".format(d_cov),
+			"-s {}".format(stretch)]
+
+			subprocess.call([
+			"./find_landmarks",
+			"-n {}".format(num_threads),
+			"-l {}".format(number_of_vertices),
+			"-w {}-{}".format(start,stop),
+			"-i{}".format(input_file_name),
+			"-olandmark_outputs.txt",
+			"-m {}".format(int(m2_d)),
+			"-a {}".format(speed_amplify),
+			"-y {}".format(orientation_amplify),
+			"-h {}".format(use_hamiltonian),
+			"-r {}".format(ray_distance_amplify),
+			"-v {}".format(straight_VB),
+			"-x {}".format(d_cov),
 			"-s {}".format(stretch)
 			])
 			
